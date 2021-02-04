@@ -36,3 +36,7 @@ class Motor:
     def reto(self):
         GPIO.output(self.porta_motor_esquerda, GPIO.LOW)
         GPIO.output(self.porta_motor_direita, GPIO.LOW)
+
+
+    def limpar_portas(self):
+        GPIO.cleanup()
