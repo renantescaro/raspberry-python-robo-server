@@ -26,10 +26,10 @@ class Dados:
                     self.camera_v -= 5
 
             # camera horizontal
-            if (float(recebido_json['camera-h']) > 0):
+            if (float(recebido_json['camera-h']) < 0):
                 if ((self.camera_h + 5) < 180):
                     self.camera_h += 5
-            elif (float(recebido_json['camera-h']) < 0):
+            elif (float(recebido_json['camera-h']) > 0):
                 if ((self.camera_h - 5) > 0):
                     self.camera_h -= 5
             
