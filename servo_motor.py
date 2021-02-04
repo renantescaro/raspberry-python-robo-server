@@ -24,7 +24,7 @@ class ServoMotor:
             self._set_angulo_convertido(angulo)
             time.sleep(0.025)
         finally:
-            gpio.cleanup()
+            pass
 
 
     def _set_angulo_convertido(self, angulo):
