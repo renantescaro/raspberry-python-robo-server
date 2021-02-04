@@ -18,6 +18,8 @@ while True:
     con, cliente = tcp.accept()
     print('conectado por '+ str(cliente))
 
+    parado = True
+    reto   = True
     while True:
         recebido_socket = con.recv(1024)
         if not recebido_socket: break
@@ -28,17 +30,23 @@ while True:
         # motores
         if dados.motor_frente:
             motor.frente()
+            parado = False
         elif dados.motor_tras:
             motor.tras()
-        else:
+            parado = False
+        elif parado == False:
             motor.parar()
+            parado = True
 
         if dados.motor_esquerda:
             motor.esquerda()
+            reto = False
         elif dados.motor_direita:
             motor.direita()
-        else:
+            reto = False
+        elif reto == False:
             motor.reto()
+            reto = True
 
         # camera
         if dados.camera_v != 0:
@@ -46,6 +54,6 @@ while True:
         if dados.camera_h != 0:
             camera.mover_horizontal(dados.camera_h)
 
-
+        #motor.limpar_portas()
     print('conexão finalizada com o cliente '+str(cliente))
     con.close
