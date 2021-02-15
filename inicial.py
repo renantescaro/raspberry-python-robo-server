@@ -1,7 +1,7 @@
 import socket
-from dados import Dados
-from camera import Camera
-from motor import Motor
+from classes.dados import Dados
+from classes.camera import Camera
+from classes.motor import Motor
 
 HOST   = ''
 PORT   = 5001
