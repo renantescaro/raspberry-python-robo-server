@@ -2,6 +2,8 @@ import socket
 from classes.dados import Dados
 from classes.camera import Camera
 from classes.motor import Motor
+from classes.ultra_sonico import UltraSonico
+from classes.api import Api
 
 HOST   = ''
 PORT   = 5001
@@ -13,6 +15,9 @@ dados  = Dados()
 
 tcp.bind(ORIGEM)
 tcp.listen(1)
+
+UltraSonico().start()
+
 
 while True:
     con, cliente = tcp.accept()
