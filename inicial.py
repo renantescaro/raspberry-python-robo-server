@@ -3,7 +3,6 @@ from classes.dados import Dados
 from classes.camera import Camera
 from classes.motor import Motor
 from classes.ultra_sonico import UltraSonico
-from classes.api import Api
 
 HOST   = ''
 PORT   = 5001
