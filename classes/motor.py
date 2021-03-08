@@ -2,40 +2,58 @@ import RPi.GPIO as GPIO
 
 class Motor:
     def __init__(self):
-        self.porta_motor_frente   = 24
-        self.porta_motor_tras     = 25
-        self.porta_motor_esquerda = 4
-        self.porta_motor_direita  = 17
+        self._porta_motor_direita_frente  = 27
+        self._porta_motor_direita_tras    = 17
+        self._porta_motor_esquerda_frente = 4
+        self._porta_motor_esquerda_tras   = 3
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
-        GPIO.setup(self.porta_motor_frente,GPIO.OUT)
-        GPIO.setup(self.porta_motor_tras,GPIO.OUT)
-        GPIO.setup(self.porta_motor_esquerda,GPIO.OUT)
-        GPIO.setup(self.porta_motor_direita,GPIO.OUT)
+        GPIO.setup(self._porta_motor_direita_frente,  GPIO.OUT)
+        GPIO.setup(self._porta_motor_direita_tras,    GPIO.OUT)
+        GPIO.setup(self._porta_motor_esquerda_frente, GPIO.OUT)
+        GPIO.setup(self._porta_motor_esquerda_tras,   GPIO.OUT)
+
 
     def parar(self):
-        GPIO.output(self.porta_motor_frente, GPIO.LOW)
-        GPIO.output(self.porta_motor_tras, GPIO.LOW)
+        GPIO.output(self._porta_motor_direita_frente,  GPIO.LOW)
+        GPIO.output(self._porta_motor_direita_tras,    GPIO.LOW)
+        GPIO.output(self._porta_motor_esquerda_frente, GPIO.LOW)
+        GPIO.output(self._porta_motor_esquerda_tras,   GPIO.LOW)
+
 
     def frente(self):
-        GPIO.output(self.porta_motor_tras, GPIO.LOW)
-        GPIO.output(self.porta_motor_frente, GPIO.HIGH)
+        GPIO.output(self._porta_motor_direita_tras,    GPIO.LOW)
+        GPIO.output(self._porta_motor_esquerda_tras,   GPIO.LOW)
+        GPIO.output(self._porta_motor_direita_frente,  GPIO.HIGH)
+        GPIO.output(self._porta_motor_esquerda_frente, GPIO.HIGH)
+
 
     def tras(self):
-        GPIO.output(self.porta_motor_frente, GPIO.LOW)
-        GPIO.output(self.porta_motor_tras, GPIO.HIGH)
+        GPIO.output(self._porta_motor_direita_frente,  GPIO.LOW)
+        GPIO.output(self._porta_motor_esquerda_frente, GPIO.LOW)
+        GPIO.output(self._porta_motor_direita_tras,    GPIO.HIGH)
+        GPIO.output(self._porta_motor_esquerda_tras,   GPIO.HIGH)
+
 
     def esquerda(self):
-        GPIO.output(self.porta_motor_direita, GPIO.LOW)
-        GPIO.output(self.porta_motor_esquerda, GPIO.HIGH)
+        GPIO.output(self._porta_motor_direita_frente,  GPIO.LOW)
+        GPIO.output(self._porta_motor_esquerda_tras,   GPIO.LOW)
+        GPIO.output(self._porta_motor_direita_tras,    GPIO.HIGH)
+        GPIO.output(self._porta_motor_esquerda_frente, GPIO.HIGH)
     
+
     def direita(self):
-        GPIO.output(self.porta_motor_esquerda, GPIO.LOW)
-        GPIO.output(self.porta_motor_direita, GPIO.HIGH)
+        GPIO.output(self._porta_motor_esquerda_frente, GPIO.LOW)
+        GPIO.output(self._porta_motor_direita_tras,    GPIO.LOW)
+        GPIO.output(self._porta_motor_esquerda_tras,   GPIO.HIGH)
+        GPIO.output(self._porta_motor_direita_frente,  GPIO.HIGH)
+
 
     def reto(self):
-        GPIO.output(self.porta_motor_esquerda, GPIO.LOW)
-        GPIO.output(self.porta_motor_direita, GPIO.LOW)
+        GPIO.output(self._porta_motor_direita_frente,  GPIO.LOW)
+        GPIO.output(self._porta_motor_esquerda_frente, GPIO.LOW)
+        GPIO.output(self._porta_motor_direita_tras,    GPIO.LOW)
+        GPIO.output(self._porta_motor_esquerda_tras,   GPIO.LOW)
 
 
     def limpar_portas(self):

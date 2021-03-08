@@ -58,6 +58,5 @@ while True:
         if dados.camera_h != 0:
             camera.mover_horizontal(dados.camera_h)
 
-        #motor.limpar_portas()
     print('conexão finalizada com o cliente '+str(cliente))
     con.close
