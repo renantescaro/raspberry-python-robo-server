@@ -1,11 +1,12 @@
 import RPi.GPIO as GPIO
+from classes.config import Config
 
 class Motor:
     def __init__(self):
-        self._porta_motor_direita_frente = 27
-        self._porta_motor_direita_tras = 17
-        self._porta_motor_esquerda_frente = 4
-        self._porta_motor_esquerda_tras = 3
+        self._porta_motor_direita_frente = Config.get('PORTA_MOTOR_DIREITA_FRENTE')
+        self._porta_motor_direita_tras = Config.get('PORTA_MOTOR_DIREITA_TRAS')
+        self._porta_motor_esquerda_frente = Config.get('PORTA_MOTOR_ESQUERDA_FRENTE')
+        self._porta_motor_esquerda_tras = Config.get('PORTA_MOTOR_ESQUERDA_TRAS')
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
