@@ -4,13 +4,13 @@ from classes.camera import Camera
 from classes.motor import Motor
 from classes.ultra_sonico import UltraSonico
 
-HOST   = ''
-PORT   = 5001
-tcp    = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+HOST = ''
+PORT = 5001
 ORIGEM = (HOST, PORT)
+tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 camera = Camera()
-motor  = Motor()
-dados  = Dados()
+motor = Motor()
+dados = Dados()
 
 tcp.bind(ORIGEM)
 tcp.listen(1)
@@ -20,10 +20,10 @@ UltraSonico().start()
 
 while True:
     con, cliente = tcp.accept()
-    print('conectado por '+ str(cliente))
+    print(f'conectado por {cliente}')
 
     parado = True
-    reto   = True
+    reto = True
     while True:
         recebido_socket = con.recv(1024)
         if not recebido_socket: break
@@ -58,5 +58,5 @@ while True:
         if dados.camera_h != 0:
             camera.mover_horizontal(dados.camera_h)
 
-    print('conexão finalizada com o cliente '+str(cliente))
+    print(f'conexão finalizada com o cliente {cliente}')
     con.close

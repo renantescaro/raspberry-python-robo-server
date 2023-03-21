@@ -7,46 +7,42 @@ from threading import Thread
 class UltraSonico(Thread):
     def __init__(self, **kwargs):
         super(UltraSonico, self).__init__(**kwargs)
-        self.TRIG = 19
-        self.ECHO = 26
+        self.PORTA_TRIG = 19
+        self.PORTA_ECHO = 26
         self.distancia = 0
-        self.sampling_rate  = 20.0
+        self.taxa_amostragem = 20.0
         self.velocidade_som = 349.10
-        self.max_distance   = 4.0
+        self.distancia_maxima = 4.0
         GPIO.setmode(GPIO.BCM)
-        signal.signal(signal.SIGINT, self._sigint_handler)
-        self.max_delta_t = self.max_distance / self.velocidade_som
-        GPIO.setup(self.TRIG, GPIO.OUT)
-        GPIO.setup(self.ECHO, GPIO.IN)
-        GPIO.output(self.TRIG, False)
+        signal.signal(signal.SIGINT, self._manipular_assinatura)
+        self.max_delta_t = self.distancia_maxima / self.velocidade_som
+        GPIO.setup(self.PORTA_TRIG, GPIO.OUT)
+        GPIO.setup(self.PORTA_ECHO, GPIO.IN)
+        GPIO.output(self.PORTA_TRIG, False)
 
-
-    def _clean(self):
+    def _limpar_portas(self):
         GPIO.cleanup()
 
-
-    def _sigint_handler(self ,signum, instant):
-        self._clean()
+    def _manipular_assinatura(self, signum, instant):
+        self._limpar_portas()
         sys.exit()
-
 
     def run(self):
         while True:
-            GPIO.output(self.TRIG, True)
+            GPIO.output(self.PORTA_TRIG, True)
             time.sleep(0.00001)
-            GPIO.output(self.TRIG, False)
+            GPIO.output(self.PORTA_TRIG, False)
 
-            while GPIO.input(self.ECHO) == 0:
+            while GPIO.input(self.PORTA_ECHO) == 0:
                 start_t = time.time()
 
-            while GPIO.input(self.ECHO) == 1 and time.time() - start_t < self.max_delta_t:
+            while GPIO.input(self.PORTA_ECHO) == 1 and time.time() - start_t < self.max_delta_t:
                 end_t = time.time()
 
+            distance = -1
             if end_t - start_t < self.max_delta_t:
                 delta_t = end_t - start_t
                 distance = 100*(0.5 * delta_t * self.velocidade_som)
-            else:
-                distance = -1
 
-            time.sleep(1/self.sampling_rate)
+            time.sleep(1/self.taxa_amostragem)
             self.distancia = round(distance, 2)

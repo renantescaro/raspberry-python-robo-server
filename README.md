@@ -1,3 +1,5 @@
+# Projeto atualmente sendo refatorado
+
 ## raspberry-python-robo
 
 #### projeto em python para controlar robo utilizando:
