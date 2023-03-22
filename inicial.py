@@ -21,16 +21,15 @@ tcp.listen(1)
 os.system('git pull origin master')
 
 while True:
-    con, cliente = tcp.accept()
+    conexao, cliente = tcp.accept()
     print(f'conectado por {cliente}')
 
     parado = True
     reto = True
     while True:
-        recebido_socket = con.recv(1024)
+        recebido_socket = conexao.recv(1024)
         if not recebido_socket: break
 
-        # json para objeto
         dados.transformar(recebido_socket)
 
         # motores
@@ -61,4 +60,4 @@ while True:
             camera.mover_horizontal(dados.camera_h)
 
     print(f'conexão finalizada com o cliente {cliente}')
-    con.close
+    conexao.close
