@@ -39,7 +39,6 @@ class Motor:
         GPIO.output(self._porta_motor_direita_tras, GPIO.HIGH)
         GPIO.output(self._porta_motor_esquerda_frente, GPIO.HIGH)
 
-
     def direita(self):
         GPIO.output(self._porta_motor_esquerda_frente, GPIO.LOW)
         GPIO.output(self._porta_motor_direita_tras, GPIO.LOW)

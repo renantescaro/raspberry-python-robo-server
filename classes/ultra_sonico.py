@@ -3,12 +3,13 @@ import time
 import signal
 import RPi.GPIO as GPIO
 from threading import Thread
+from classes.config import Config
 
 class UltraSonico(Thread):
     def __init__(self, **kwargs):
         super(UltraSonico, self).__init__(**kwargs)
-        self.PORTA_TRIG = 19
-        self.PORTA_ECHO = 26
+        self.PORTA_TRIG = int(Config.get('PORTA_ULTRASSONICO_TRIG'))
+        self.PORTA_ECHO = int(Config.get('PORTA_ULTRASSONICO_ECHO'))
         self.distancia = 0
         self.taxa_amostragem = 20.0
         self.velocidade_som = 349.10
