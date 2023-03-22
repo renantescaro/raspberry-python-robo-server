@@ -18,7 +18,7 @@ tcp.listen(1)
 
 # UltraSonico().start()
 
-os.system('git pull origin master')
+os.system('git -C raspberry-python-robo-server/ pull origin master')
 
 while True:
     conexao, cliente = tcp.accept()
