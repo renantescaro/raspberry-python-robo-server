@@ -3,10 +3,10 @@ from classes.config import Config
 
 class Motor:
     def __init__(self):
-        self._porta_motor_direita_frente = Config.get('PORTA_MOTOR_DIREITA_FRENTE')
-        self._porta_motor_direita_tras = Config.get('PORTA_MOTOR_DIREITA_TRAS')
-        self._porta_motor_esquerda_frente = Config.get('PORTA_MOTOR_ESQUERDA_FRENTE')
-        self._porta_motor_esquerda_tras = Config.get('PORTA_MOTOR_ESQUERDA_TRAS')
+        self._porta_motor_direita_frente = int(Config.get('PORTA_MOTOR_DIREITA_FRENTE'))
+        self._porta_motor_direita_tras = int(Config.get('PORTA_MOTOR_DIREITA_TRAS'))
+        self._porta_motor_esquerda_frente = int(Config.get('PORTA_MOTOR_ESQUERDA_FRENTE'))
+        self._porta_motor_esquerda_tras = int(Config.get('PORTA_MOTOR_ESQUERDA_TRAS'))
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)

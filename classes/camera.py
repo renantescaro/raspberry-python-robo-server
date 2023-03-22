@@ -3,8 +3,8 @@ from classes.config import Config
 
 class Camera:
     def __init__(self):
-        self.porta_servo_vertical = Config.get('PORTA_SERVO_VERTICAL')
-        self.porta_servo_horizontal = Config.get('PORTA_SERVO_HORIZONTAL')
+        self.porta_servo_vertical = int(Config.get('PORTA_SERVO_VERTICAL'))
+        self.porta_servo_horizontal = int(Config.get('PORTA_SERVO_HORIZONTAL'))
 
     def mover_vertical(self, angulo):
         servo_motor = ServoMotor(porta=self.porta_servo_vertical)
