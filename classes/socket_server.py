@@ -24,6 +24,3 @@ class SocketServer:
 
         self._accept()
         return None
-
-    def disconnect(self):
-
