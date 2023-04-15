@@ -3,13 +3,13 @@ import time
 import signal
 import RPi.GPIO as GPIO
 from threading import Thread
-from classes.config import Config
+from classes.settings import Settings
 
 class UltraSonico(Thread):
     def __init__(self, **kwargs):
         super(UltraSonico, self).__init__(**kwargs)
-        self.PORTA_TRIG = int(Config.get('PORTA_ULTRASSONICO_TRIG'))
-        self.PORTA_ECHO = int(Config.get('PORTA_ULTRASSONICO_ECHO'))
+        self.PORTA_TRIG = int(Settings.get('PORTA_ULTRASSONICO_TRIG'))
+        self.PORTA_ECHO = int(Settings.get('PORTA_ULTRASSONICO_ECHO'))
         self.distancia = 0
         self.taxa_amostragem = 20.0
         self.velocidade_som = 349.10
@@ -21,11 +21,11 @@ class UltraSonico(Thread):
         GPIO.setup(self.PORTA_ECHO, GPIO.IN)
         GPIO.output(self.PORTA_TRIG, False)
 
-    def _limpar_portas(self):
+    def _clean_pins(self):
         GPIO.cleanup()
 
     def _manipular_assinatura(self, signum, instant):
-        self._limpar_portas()
+        self._clean_pins()
         sys.exit()
 
     def run(self):

@@ -1,15 +1,15 @@
 from classes.servo_motor import ServoMotor
-from classes.config import Config
+from classes.settings import Settings
 
 class Camera:
     def __init__(self):
-        self.porta_servo_vertical = int(Config.get('PORTA_SERVO_VERTICAL'))
-        self.porta_servo_horizontal = int(Config.get('PORTA_SERVO_HORIZONTAL'))
+        self.vertical_servo_port = int(Settings.get('PORTA_SERVO_VERTICAL'))
+        self.horizontal_servo_port = int(Settings.get('PORTA_SERVO_HORIZONTAL'))
 
-    def mover_vertical(self, angulo):
-        servo_motor = ServoMotor(porta=self.porta_servo_vertical)
-        servo_motor.definir_angulo(angulo)
+    def move_vertical(self, angulo):
+        servo_motor = ServoMotor(port=self.vertical_servo_port)
+        servo_motor.set_angle(angulo)
 
-    def mover_horizontal(self, angulo):
-        servo_motor = ServoMotor(porta=self.porta_servo_horizontal)
-        servo_motor.definir_angulo(angulo)
+    def move_horizontal(self, angulo):
+        servo_motor = ServoMotor(port=self.horizontal_servo_port)
+        servo_motor.set_angle(angulo)

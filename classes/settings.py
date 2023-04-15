@@ -1,9 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-class Config:
+class Settings:
     @staticmethod
-    def arquivo_vazio():
+    def empty_file():
         return os.stat('.env').st_size == 0
 
     @staticmethod

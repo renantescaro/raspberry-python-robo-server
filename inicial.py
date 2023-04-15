@@ -1,5 +1,5 @@
 import os
-from classes.rotina import Rotina
+from classes.routine import Routine
 from classes.socket_server import SocketServer
 # from classes.ultra_sonico import UltraSonico
 
@@ -8,12 +8,12 @@ from classes.socket_server import SocketServer
 os.system('git -C /home/pi/raspberry-python-robo-server/ pull origin master')
 
 socket_server = SocketServer()
-rotina = Rotina()
-
+routine = Routine()
 
 while True:
-    received_socket = socket_server.execute()
+    socket_server.accept()
 
-    if not received_socket: break
-
-    rotina.executar(received_socket)
+    while True:
+        received_socket = socket_server.execute()
+        if not received_socket: break
+        routine.execute(received_socket)

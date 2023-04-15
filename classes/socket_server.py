@@ -14,13 +14,12 @@ class SocketServer:
         self._tcp.bind(self._origin)
         self._tcp.listen(1)
 
-    def _accept(self):
+    def accept(self):
         self.connection, self.client = self._tcp.accept()
-        print(f'conectado por {self.client}')
+        print(f'Connected by {self.client}')
 
     def execute(self):
-        if self.connection is not None:
-            return self.connection.recv(1024)
+        if self.connection is None:
+            return None
 
-        self._accept()
-        return None
+        return self.connection.recv(1024)
