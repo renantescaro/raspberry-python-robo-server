@@ -136,8 +136,7 @@ def test_invalid_packet_closes_connection(server, wait):
         send(sock, protocol.FORWARD)
         assert wait(lambda: server.drive.state is DriveState.FORWARD)
         sock.sendall(b"\x00\x01\x00\x00")
-        sock.settimeout(2)
-        assert sock.recv(16) == b""  # servidor encerrou
+        assert_closed_by_server(sock)
     assert wait(lambda: server.drive.state is DriveState.STOP)
 
 
@@ -167,8 +166,88 @@ SHUTDOWN = protocol.encode_command(protocol.SHUTDOWN)
 
 
 def assert_closed_by_server(sock) -> None:
+    """Lê até o servidor fechar; antes disso só pode chegar telemetria."""
     sock.settimeout(2)
-    assert sock.recv(16) == b""
+    received = bytearray()
+    while chunk := sock.recv(64):
+        received += chunk
+    assert len(received) % protocol.PACKET_SIZE == 0
+    for offset in range(0, len(received), protocol.PACKET_SIZE):
+        assert isinstance(protocol.decode_packet(received, offset), protocol.Telemetry)
+
+
+def read_packet(sock) -> protocol.Telemetry:
+    data = b""
+    while len(data) < protocol.PACKET_SIZE:
+        chunk = sock.recv(protocol.PACKET_SIZE - len(data))
+        assert chunk, "conexão fechada"
+        data += chunk
+    return protocol.decode_packet(data)
+
+
+def start_server(robot: RobotServer):
+    robot.address = robot.bind()
+    thread = threading.Thread(target=robot.serve_forever, daemon=True)
+    thread.start()
+    return thread
+
+
+def stop_server(robot: RobotServer, thread) -> None:
+    robot.shutdown()
+    thread.join(timeout=3)
+    robot.close()
+
+
+def test_sends_wifi_telemetry_on_connect_and_periodically(backend, make_settings):
+    readings = iter([protocol.Telemetry(91, -46), protocol.Telemetry(40, -75)])
+    robot = RobotServer(
+        make_settings(telemetry_interval_s=0.2), backend, wifi_reader=lambda: next(readings, protocol.Telemetry())
+    )
+    thread = start_server(robot)
+    try:
+        with connect(robot) as sock:
+            started = time.monotonic()
+            assert read_packet(sock) == protocol.Telemetry(91, -46)  # logo ao conectar
+            assert time.monotonic() - started < 0.15
+            assert read_packet(sock) == protocol.Telemetry(40, -75)
+            assert time.monotonic() - started >= 0.15  # respeita o intervalo
+    finally:
+        stop_server(robot, thread)
+
+
+def test_telemetry_keeps_flowing_while_idle(backend, make_settings, wait):
+    # Watchdog desligado e sem pacotes do cliente: o loop ainda acorda para enviar
+    robot = RobotServer(
+        make_settings(telemetry_interval_s=0.1, watchdog_timeout_s=0),
+        backend,
+        wifi_reader=lambda: protocol.Telemetry(70, -60),
+    )
+    thread = start_server(robot)
+    try:
+        with connect(robot) as sock:
+            for _ in range(3):
+                assert read_packet(sock) == protocol.Telemetry(70, -60)
+    finally:
+        stop_server(robot, thread)
+
+
+def test_telemetry_disabled_sends_nothing(backend, make_settings):
+    robot = RobotServer(make_settings(telemetry_interval_s=0), backend, wifi_reader=lambda: 1 / 0)
+    thread = start_server(robot)
+    try:
+        with connect(robot) as sock:
+            sock.settimeout(0.3)
+            with pytest.raises(socket.timeout):
+                sock.recv(4)
+    finally:
+        stop_server(robot, thread)
+
+
+def test_telemetry_from_client_is_ignored(server, wait):
+    with connect(server) as sock:
+        sock.sendall(protocol.encode_telemetry(protocol.Telemetry(50, -60)))
+        send(sock, protocol.FORWARD)
+        assert wait(lambda: server.drive.state is DriveState.FORWARD)
 
 
 def test_shutdown_stops_robot_and_closes_connection(server, power, wait):

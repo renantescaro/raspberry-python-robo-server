@@ -158,6 +158,45 @@ def test_unknown_command_cannot_be_encoded(protocol):
         protocol.encode_command(0xFF)
 
 
+# -------------------------------------------------------------------- telemetria
+
+
+def _telemetry(values: list) -> tuple:
+    return tuple(values)  # null do JSON vira None
+
+
+def test_telemetry_constants(protocol):
+    assert protocol.TELEMETRY_MAGIC == VECTORS["telemetry_magic"]
+
+
+@pytest.mark.parametrize("case", VECTORS["telemetry_packets"], ids=_ids(VECTORS["telemetry_packets"]))
+def test_encode_telemetry(protocol, case):
+    packet = protocol.encode_telemetry(protocol.Telemetry(*case["telemetry"]))
+    assert packet.hex() == case["hex"]
+
+
+@pytest.mark.parametrize("case", VECTORS["telemetry_encode"], ids=_ids(VECTORS["telemetry_encode"]))
+def test_encode_telemetry_clamps(protocol, case):
+    packet = protocol.encode_telemetry(protocol.Telemetry(*case["telemetry"]))
+    assert packet.hex() == case["hex"]
+
+
+@pytest.mark.parametrize(
+    "case",
+    VECTORS["telemetry_packets"] + VECTORS["telemetry_decode"],
+    ids=_ids(VECTORS["telemetry_packets"] + VECTORS["telemetry_decode"]),
+)
+def test_decode_telemetry(protocol, case):
+    packet = protocol.decode_packet(bytes.fromhex(case["hex"]))
+    assert type(packet).__name__ == "Telemetry"
+    assert tuple(packet) == _telemetry(case["telemetry"])
+
+
+def test_telemetry_is_not_accepted_as_state(protocol):
+    with pytest.raises(protocol.ProtocolError):
+        protocol.decode(bytes.fromhex(VECTORS["telemetry_packets"][0]["hex"]))
+
+
 # --------------------------------------------------------- compatibilidade cruzada
 
 
@@ -167,6 +206,13 @@ def test_peer_and_local_agree_on_commands(case):
     assert tuple(peer.decode_packet(LOCAL.encode_command(case["code"]))) == (case["code"],)
     assert tuple(LOCAL.decode_packet(peer.encode_command(case["code"]))) == (case["code"],)
 
+
+@pytest.mark.parametrize("case", VECTORS["telemetry_packets"], ids=_ids(VECTORS["telemetry_packets"]))
+def test_peer_and_local_agree_on_telemetry(case):
+    peer = _require_peer()
+    expected = _telemetry(case["telemetry"])
+    assert tuple(peer.decode_packet(LOCAL.encode_telemetry(LOCAL.Telemetry(*expected)))) == expected
+    assert tuple(LOCAL.decode_packet(peer.encode_telemetry(peer.Telemetry(*expected)))) == expected
 
 
 @pytest.mark.parametrize("case", VECTORS["roundtrip"], ids=_ids(VECTORS["roundtrip"]))

@@ -16,8 +16,14 @@ Comando (COMMAND_MAGIC 0xA6) - ação única, nunca repetida:
     byte 2  reservado (0)
     byte 3  reservado (0)
 
+Telemetria (TELEMETRY_MAGIC 0xA7) - do servidor para o cliente, periódica:
+    byte 1  qualidade do Wi-Fi do robô em % (0 a 100; 0xFF = desconhecida)
+    byte 2  sinal do Wi-Fi em dBm, com sinal (-128 = desconhecido)
+    byte 3  reservado (0)
+
 O servidor pode descartar estados antigos (só o mais recente importa), mas
-precisa processar todo comando recebido.
+precisa processar todo comando recebido. Os pacotes de estado e de comando vão
+do cliente para o servidor; os de telemetria, do servidor para o cliente.
 """
 
 from __future__ import annotations
@@ -27,6 +33,7 @@ from typing import NamedTuple, Union
 
 MAGIC = 0xA5
 COMMAND_MAGIC = 0xA6
+TELEMETRY_MAGIC = 0xA7
 PACKET = struct.Struct("<BBbb")
 PACKET_SIZE = PACKET.size
 
@@ -37,6 +44,9 @@ RIGHT = 0x08
 
 SHUTDOWN = 0x01
 COMMAND_CODES = frozenset({SHUTDOWN})
+
+WIFI_QUALITY_UNKNOWN = 0xFF
+WIFI_DBM_UNKNOWN = -128
 
 
 class ProtocolError(ValueError):
@@ -53,7 +63,12 @@ class Command(NamedTuple):
     code: int
 
 
-Packet = Union[ControlState, Command]
+class Telemetry(NamedTuple):
+    wifi_quality: int | None = None  # %, None = desconhecida
+    wifi_dbm: int | None = None  # dBm, None = desconhecido
+
+
+Packet = Union[ControlState, Command, Telemetry]
 
 
 def encode(state: ControlState) -> bytes:
@@ -64,6 +79,16 @@ def encode_command(code: int) -> bytes:
     if code not in COMMAND_CODES:
         raise ValueError(f"comando desconhecido: {code}")
     return PACKET.pack(COMMAND_MAGIC, code, 0, 0)
+
+
+def encode_telemetry(telemetry: Telemetry) -> bytes:
+    quality = (
+        WIFI_QUALITY_UNKNOWN
+        if telemetry.wifi_quality is None
+        else min(100, max(0, telemetry.wifi_quality))
+    )
+    dbm = WIFI_DBM_UNKNOWN if telemetry.wifi_dbm is None else min(127, max(-127, telemetry.wifi_dbm))
+    return PACKET.pack(TELEMETRY_MAGIC, quality, dbm, 0)
 
 
 def decode(buffer: bytes | bytearray | memoryview, offset: int = 0) -> ControlState:
@@ -83,6 +108,10 @@ def decode_packet(buffer: bytes | bytearray | memoryview, offset: int = 0) -> Pa
         if first not in COMMAND_CODES:
             raise ProtocolError(f"comando desconhecido: 0x{first:02X}")
         return Command(first)
+    if magic == TELEMETRY_MAGIC:
+        quality = None if first == WIFI_QUALITY_UNKNOWN else min(first, 100)
+        dbm = None if second == WIFI_DBM_UNKNOWN else second
+        return Telemetry(quality, dbm)
     raise ProtocolError(f"magic inválido: 0x{magic:02X}")
 
 

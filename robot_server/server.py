@@ -6,6 +6,7 @@ import logging
 import socket
 import threading
 import time
+from typing import Callable
 
 from . import protocol
 from .camera import Camera
@@ -14,18 +15,26 @@ from .motors import Drive
 from .power import PowerControl
 from .settings import Settings
 from .ultrasonic import UltrasonicSensor
+from .wifi import read_wifi
 
 log = logging.getLogger(__name__)
 
 RECV_SIZE = protocol.PACKET_SIZE * 64
 ACCEPT_TIMEOUT_S = 0.2
+# Limite para enviar a telemetria: um cliente travado não pode prender o loop
+SEND_TIMEOUT_S = 1.0
 
 
 class RobotServer:
     def __init__(
-        self, settings: Settings, backend: GpioBackend, power: PowerControl | None = None
+        self,
+        settings: Settings,
+        backend: GpioBackend,
+        power: PowerControl | None = None,
+        wifi_reader: Callable[[], protocol.Telemetry] | None = None,
     ) -> None:
         self._settings = settings
+        self._read_wifi = wifi_reader or (lambda: read_wifi(settings.wifi_interface))
         # Sem PowerControl (testes, uso como biblioteca) o comando de desligar é ignorado
         self._power = power
         self._listener: socket.socket | None = None
@@ -111,17 +120,30 @@ class RobotServer:
         watchdog = self._settings.watchdog_timeout_s
         buffer = bytearray()
         last_state: protocol.ControlState | None = None
-        last_packet = last_update = time.monotonic()
+        telemetry_interval = self._settings.telemetry_interval_s
+        last_packet = last_update = next_telemetry = time.monotonic()
         watchdog_tripped = False
 
         while True:
-            # Acorda rápido apenas quando há movimento da câmera em andamento
+            now = time.monotonic()
+            if telemetry_interval > 0 and now >= next_telemetry:
+                # Primeira logo ao conectar, depois a cada intervalo
+                connection.settimeout(SEND_TIMEOUT_S)
+                connection.sendall(protocol.encode_telemetry(self._read_wifi()))
+                next_telemetry = now + telemetry_interval
+
+            # Acorda rápido apenas quando há movimento da câmera em andamento;
+            # senão, só no próximo prazo (watchdog ou telemetria)
             if self.camera.needs_update:
-                connection.settimeout(tick)
-            elif watchdog > 0 and not watchdog_tripped:
-                connection.settimeout(max(tick, watchdog - (time.monotonic() - last_packet)))
+                timeout = tick
             else:
-                connection.settimeout(None)
+                deadlines = []
+                if watchdog > 0 and not watchdog_tripped:
+                    deadlines.append(watchdog - (now - last_packet))
+                if telemetry_interval > 0:
+                    deadlines.append(next_telemetry - now)
+                timeout = max(tick, min(deadlines)) if deadlines else None
+            connection.settimeout(timeout)
 
             try:
                 chunk = connection.recv(RECV_SIZE)
@@ -141,8 +163,10 @@ class RobotServer:
                     packet = protocol.decode_packet(buffer, index * protocol.PACKET_SIZE)
                     if isinstance(packet, protocol.ControlState):
                         state = packet
-                    elif self._run_command(packet, client):
-                        return  # desligamento iniciado: encerra a conexão
+                    elif isinstance(packet, protocol.Command):
+                        if self._run_command(packet, client):
+                            return  # desligamento iniciado: encerra a conexão
+                    # Telemetria só vai do servidor para o cliente: se vier, é ignorada
                 del buffer[: complete * protocol.PACKET_SIZE]
                 if state is not None and (state != last_state or watchdog_tripped):
                     log.debug("estado recebido: %s", state)
