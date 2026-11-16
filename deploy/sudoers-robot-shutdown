@@ -1,0 +1,5 @@
+# Permite ao serviço do robô (usuário robot) desligar o Raspberry Pi pelo cliente.
+# Libera SOMENTE este comando, sem senha. Instale com:
+#   sudo install -m 0440 deploy/sudoers-robot-shutdown /etc/sudoers.d/robot-shutdown
+#   sudo visudo -cf /etc/sudoers.d/robot-shutdown
+robot ALL=(root) NOPASSWD: /usr/bin/systemctl poweroff

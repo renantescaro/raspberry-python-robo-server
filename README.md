@@ -9,6 +9,7 @@ Servidor que roda no Raspberry Pi 3 B+ e controla o robô:
 * sensor ultrassônico (opcional)
 * streaming de vídeo MJPEG da câmera (`http://<pi>:8080/?action=stream`)
 * watchdog: para os motores se a conexão cair ou o cliente parar de responder
+* desligamento do Raspberry Pi a pedido do cliente
 * auto-atualização via `git pull` ao iniciar
 
 <div style="display: flex">
@@ -46,6 +47,20 @@ journalctl -u robot-server -u camera-stream -f   # logs
 ```
 
 O arquivo assume o usuário `robot` e o projeto em `/home/robot/raspberry-python-robo-server`; ajuste se for diferente.
+
+## Desligar pelo cliente 🔌
+
+O botão **Desligar robô** do cliente envia um comando; o servidor para motores e servos e executa
+`SHUTDOWN_COMMAND` (padrão `sudo -n /usr/bin/systemctl poweroff`). Para o serviço poder desligar
+sem senha, libere **apenas** esse comando:
+
+```bash
+sudo install -m 0440 deploy/sudoers-robot-shutdown /etc/sudoers.d/robot-shutdown
+sudo visudo -cf /etc/sudoers.d/robot-shutdown
+```
+
+`SHUTDOWN_ENABLED=false` desativa. No `--simulate` o pedido só aparece no log.
+Qualquer cliente na rede que fale o protocolo pode pedir o desligamento (assim como pode dirigir o robô).
 
 ## Streaming de vídeo 📷
 

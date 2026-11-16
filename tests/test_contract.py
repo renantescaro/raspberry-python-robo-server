@@ -120,7 +120,53 @@ def test_decode_with_offset_in_stream(protocol):
     assert tuple(protocol.decode(stream, VECTORS["packet_size"])) == tuple(second["state"])
 
 
+# ---------------------------------------------------------------------- comandos
+
+
+def test_command_constants(protocol):
+    assert protocol.COMMAND_MAGIC == VECTORS["command_magic"]
+    for name, value in VECTORS["commands"].items():
+        assert getattr(protocol, name) == value, name
+
+
+@pytest.mark.parametrize("case", VECTORS["command_packets"], ids=_ids(VECTORS["command_packets"]))
+def test_encode_command(protocol, case):
+    assert protocol.encode_command(case["code"]).hex() == case["hex"]
+
+
+@pytest.mark.parametrize("case", VECTORS["command_packets"], ids=_ids(VECTORS["command_packets"]))
+def test_decode_command(protocol, case):
+    packet = protocol.decode_packet(bytes.fromhex(case["hex"]))
+    assert type(packet).__name__ == "Command"
+    assert tuple(packet) == (case["code"],)
+
+
+@pytest.mark.parametrize("case", VECTORS["roundtrip"], ids=_ids(VECTORS["roundtrip"]))
+def test_decode_packet_accepts_state(protocol, case):
+    packet = protocol.decode_packet(bytes.fromhex(case["hex"]))
+    assert type(packet).__name__ == "ControlState"
+    assert tuple(packet) == tuple(case["state"])
+
+
+def test_command_is_not_accepted_as_state(protocol):
+    with pytest.raises(protocol.ProtocolError):
+        protocol.decode(bytes.fromhex(VECTORS["command_packets"][0]["hex"]))
+
+
+def test_unknown_command_cannot_be_encoded(protocol):
+    with pytest.raises(ValueError):
+        protocol.encode_command(0xFF)
+
+
 # --------------------------------------------------------- compatibilidade cruzada
+
+
+@pytest.mark.parametrize("case", VECTORS["command_packets"], ids=_ids(VECTORS["command_packets"]))
+def test_peer_and_local_agree_on_commands(case):
+    peer = _require_peer()
+    assert tuple(peer.decode_packet(LOCAL.encode_command(case["code"]))) == (case["code"],)
+    assert tuple(LOCAL.decode_packet(peer.encode_command(case["code"]))) == (case["code"],)
+
 
 
 @pytest.mark.parametrize("case", VECTORS["roundtrip"], ids=_ids(VECTORS["roundtrip"]))

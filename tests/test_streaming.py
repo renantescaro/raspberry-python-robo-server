@@ -158,15 +158,18 @@ def test_camera_turns_off_after_viewer_leaves(stream_server, wait):
 def test_two_viewers_share_one_camera(stream_server, wait):
     source = FakeSource()
     hub, port = stream_server(source)
-    conns = []
+    viewers = []
     for _ in range(2):
         conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
         conn.request("GET", "/?action=stream")
-        assert len(read_frames(conn.getresponse(), 2)) == 2
-        conns.append(conn)
+        response = conn.getresponse()
+        assert len(read_frames(response, 2)) == 2
+        # A resposta é dona do socket: se for coletada, a conexão fecha
+        viewers.append((conn, response))
     assert hub.viewers == 2
     assert source.starts == 1
-    for conn in conns:
+    for conn, response in viewers:
+        response.close()
         conn.close()
     assert wait(lambda: hub.viewers == 0, timeout=3)
 

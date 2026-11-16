@@ -22,9 +22,24 @@ RF, RB, LF, LB = 27, 17, 4, 3
 ROOT = Path(__file__).resolve().parent.parent
 
 
+class FakePower:
+    def __init__(self) -> None:
+        self.calls = 0
+        self.result = True
+
+    def shutdown(self) -> bool:
+        self.calls += 1
+        return self.result
+
+
 @pytest.fixture
-def server(backend, make_settings):
-    robot = RobotServer(make_settings(), backend)
+def power() -> FakePower:
+    return FakePower()
+
+
+@pytest.fixture
+def server(backend, make_settings, power):
+    robot = RobotServer(make_settings(), backend, power)
     host, port = robot.bind()
     thread = threading.Thread(target=robot.serve_forever, daemon=True)
     thread.start()
@@ -148,6 +163,66 @@ def test_accepts_new_client_after_disconnect(server, wait):
         assert wait(lambda: server.drive.state is DriveState.RIGHT)
 
 
+SHUTDOWN = protocol.encode_command(protocol.SHUTDOWN)
+
+
+def assert_closed_by_server(sock) -> None:
+    sock.settimeout(2)
+    assert sock.recv(16) == b""
+
+
+def test_shutdown_stops_robot_and_closes_connection(server, power, wait):
+    with connect(server) as sock:
+        send(sock, protocol.FORWARD, camera_v=1)
+        assert wait(lambda: server.drive.state is DriveState.FORWARD)
+        sock.sendall(SHUTDOWN)
+        assert_closed_by_server(sock)
+    assert power.calls == 1
+    assert server.drive.state is DriveState.STOP
+
+
+def test_shutdown_in_same_batch_as_states_is_not_dropped(server, power, wait):
+    state = protocol.encode(protocol.ControlState(protocol.FORWARD, 0, 0))
+    with connect(server) as sock:
+        # Estados são descartados quando há um mais novo, comandos nunca
+        sock.sendall(state + SHUTDOWN + state)
+        assert_closed_by_server(sock)
+    assert power.calls == 1
+    assert server.drive.state is DriveState.STOP
+
+
+def test_failed_shutdown_keeps_connection(server, power, wait):
+    power.result = False
+    with connect(server) as sock:
+        sock.sendall(SHUTDOWN)
+        assert wait(lambda: power.calls == 1)
+        send(sock, protocol.LEFT)
+        assert wait(lambda: server.drive.state is DriveState.LEFT)
+
+
+def test_shutdown_without_power_control_is_ignored(backend, make_settings, wait):
+    robot = RobotServer(make_settings(), backend)  # sem PowerControl
+    host, port = robot.bind()
+    thread = threading.Thread(target=robot.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with socket.create_connection((host, port), timeout=2) as sock:
+            sock.sendall(SHUTDOWN)
+            send(sock, protocol.RIGHT)
+            assert wait(lambda: robot.drive.state is DriveState.RIGHT)
+    finally:
+        robot.shutdown()
+        thread.join(timeout=3)
+        robot.close()
+
+
+def test_unknown_command_closes_connection(server, power):
+    with connect(server) as sock:
+        sock.sendall(b"\xa6\xff\x00\x00")
+        assert_closed_by_server(sock)
+    assert power.calls == 0
+
+
 def test_simulator_entrypoint_end_to_end():
     """Sobe `python main.py --simulate` de verdade e envia um comando."""
     env = {**os.environ, "SERVER_HOST": "127.0.0.1", "SERVER_PORT": "0", "PYTHONUNBUFFERED": "1", "PYTHONIOENCODING": "utf-8"}
@@ -181,6 +256,9 @@ def test_simulator_entrypoint_end_to_end():
             # O backend registra a escrita no pino antes do log de estado dos motores
             wait_for_line(rf"\[mock\] GPIO {LF} -> 1")
             wait_for_line(r"motores: FORWARD")
+            # No simulador o desligamento nunca é executado de verdade
+            sock.sendall(SHUTDOWN)
+            wait_for_line(r"\[simulação\] o Raspberry Pi seria desligado")
     finally:
         process.terminate()
         process.wait(timeout=5)
