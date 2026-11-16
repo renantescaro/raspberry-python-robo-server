@@ -166,8 +166,14 @@ class LgpioBackend:
 
     def servo_pulse(self, pin: int, pulse_us: int) -> None:
         self._claim_output(pin)
-        self._servos.add(pin)
+        if pulse_us == 0:
+            # lgpio só aceita 0 (parar) com o servo ativo; senão erro 'bad PWM micros'
+            if pin in self._servos:
+                self._lg.tx_servo(self._handle, pin, 0, SERVO_FREQUENCY_HZ)
+                self._servos.discard(pin)
+            return
         self._lg.tx_servo(self._handle, pin, pulse_us, SERVO_FREQUENCY_HZ)
+        self._servos.add(pin)
 
     def setup_input(self, pin: int) -> None:
         # Entrada com alertas: as bordas chegam com timestamp do kernel
@@ -189,8 +195,8 @@ class LgpioBackend:
         lg = self._lg
         for listener in self._echo_listeners.values():
             listener.cancel()
-        for pin in self._servos:
-            lg.tx_servo(self._handle, pin, 0)
+        for pin in list(self._servos):
+            self.servo_pulse(pin, 0)
         for pin in self._outputs:
             lg.gpio_write(self._handle, pin, 0)
         for pin in self._claimed:

@@ -36,6 +36,7 @@ class FakeLgpio(types.ModuleType):
         self.levels: dict[int, int] = {}
         self.callbacks: list[FakeCallback] = []
         self.closed: list[int] = []
+        self.active_servos: set[int] = set()
         # Simula o eco: ao baixar o trigger, gera as bordas com esta duração (ns)
         self.echo_duration_ns: int | None = None
         self.echo_pin: int | None = None
@@ -70,6 +71,13 @@ class FakeLgpio(types.ModuleType):
         self.calls.append(("free", gpio))
 
     def tx_servo(self, handle, gpio, pulse_width, servo_frequency=50, pulse_offset=0, pulse_cycles=0):
+        # Comportamento real (verificado no Pi): parar um servo inativo dá erro
+        if pulse_width == 0 and gpio not in self.active_servos:
+            raise FakeLgpioError("bad PWM micros")
+        if pulse_width:
+            self.active_servos.add(gpio)
+        else:
+            self.active_servos.discard(gpio)
         self.calls.append(("servo", gpio, pulse_width, servo_frequency))
 
     def callback(self, handle, gpio, edge=1, func=None):
@@ -128,6 +136,23 @@ def test_servo_claims_pin_once(fake_lgpio):
         ("servo", 18, 1600, 50),
         ("servo", 18, 0, 50),
     ]
+
+
+def test_stopping_inactive_servo_is_noop(fake_lgpio):
+    backend = LgpioBackend()
+    backend.servo_pulse(18, 0)  # nunca ativado
+    backend.servo_pulse(18, 1500)
+    backend.servo_pulse(18, 0)
+    backend.servo_pulse(18, 0)  # já parado
+    assert [c for c in fake_lgpio.calls if c[0] == "servo"] == [("servo", 18, 1500, 50), ("servo", 18, 0, 50)]
+
+
+def test_cleanup_after_release_does_not_fail(fake_lgpio):
+    backend = LgpioBackend()
+    backend.servo_pulse(18, 1500)
+    backend.servo_pulse(18, 0)
+    backend.cleanup()  # antes: tx_servo(0) em servo parado -> 'bad PWM micros'
+    assert fake_lgpio.closed == [100]
 
 
 def test_input_uses_alerts_with_pull_down(fake_lgpio):
