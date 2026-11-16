@@ -7,6 +7,7 @@ Servidor que roda no Raspberry Pi 3 B+ e controla o robô:
 * motores DC por ponte H
 * câmera com movimento vertical / horizontal utilizando servomotores
 * sensor ultrassônico (opcional)
+* streaming de vídeo MJPEG da câmera (`http://<pi>:8080/?action=stream`)
 * watchdog: para os motores se a conexão cair ou o cliente parar de responder
 * auto-atualização via `git pull` ao iniciar
 
@@ -38,13 +39,24 @@ Com `GPIO_BACKEND=auto` o servidor escolhe, nesta ordem:
 ## Serviço (iniciar no boot)
 
 ```bash
-sudo cp deploy/robot-server.service /etc/systemd/system/
+sudo cp deploy/robot-server.service deploy/camera-stream.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now robot-server
-journalctl -u robot-server -f        # logs
+sudo systemctl enable --now robot-server camera-stream
+journalctl -u robot-server -u camera-stream -f   # logs
 ```
 
 O arquivo assume o usuário `robot` e o projeto em `/home/robot/raspberry-python-robo-server`; ajuste se for diferente.
+
+## Streaming de vídeo 📷
+
+O serviço `camera-stream` (`python -m robot_server.streaming`) publica a câmera em
+`http://<pi>:8080/?action=stream` (MJPEG, mesmo formato do mjpg-streamer). No cliente:
+`STREAMING_URL=http://<pi>:8080/?action=stream` e `VIDEO_ENABLED=true`.
+
+* JPEG gerado pelo codificador de hardware do Pi (`picamera2`, pacote `python3-picamera2`)
+* a câmera só liga enquanto alguém está assistindo
+* roda separado do controle: falha na câmera não afeta os motores
+* resolução e FPS em `STREAM_SIZE` / `STREAM_FPS` (padrão 640x480 @ 30)
 
 ## Simulador (qualquer PC)
 

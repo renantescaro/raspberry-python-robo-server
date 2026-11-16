@@ -9,7 +9,7 @@ from robot_server.settings import load_settings
 
 _PREFIXES = (
     "SERVER_", "GPIO_", "MOTOR_", "SERVO_", "CAMERA_", "CONTROL_", "WATCHDOG_",
-    "ULTRASONIC_", "SPEED_OF_SOUND", "AUTO_UPDATE", "PORTA_",
+    "ULTRASONIC_", "SPEED_OF_SOUND", "AUTO_UPDATE", "PORTA_", "STREAM_",
 )
 
 
@@ -97,3 +97,16 @@ def test_create_backend_auto_without_gpio_libraries(monkeypatch):
 def test_gpio_chip(monkeypatch):
     monkeypatch.setenv("GPIO_CHIP", "4")
     assert load_settings().gpio_chip == 4
+
+
+def test_stream_defaults():
+    s = load_settings()
+    assert (s.stream_host, s.stream_port, s.stream_size, s.stream_fps) == ("0.0.0.0", 8080, (640, 480), 30)
+
+
+def test_stream_custom(monkeypatch):
+    monkeypatch.setenv("STREAM_PORT", "8081")
+    monkeypatch.setenv("STREAM_SIZE", "1280X720")
+    monkeypatch.setenv("STREAM_FPS", "15")
+    s = load_settings()
+    assert (s.stream_port, s.stream_size, s.stream_fps) == (8081, (1280, 720), 15)

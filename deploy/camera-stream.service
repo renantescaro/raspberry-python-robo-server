@@ -1,0 +1,21 @@
+# Serviço systemd do streaming de vídeo da câmera (porta 8080 por padrão).
+# Instalação: veja a seção "Serviço" do README.
+[Unit]
+Description=Streaming MJPEG da câmera do robô
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=robot
+Group=robot
+WorkingDirectory=/home/robot/raspberry-python-robo-server
+ExecStart=/home/robot/raspberry-python-robo-server/venv/bin/python -m robot_server.streaming
+Environment=PYTHONUNBUFFERED=1
+KillSignal=SIGTERM
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -77,6 +77,10 @@ DEFAULT_SETTINGS = Settings(
     speed_of_sound_mps=343.0,
     auto_update=False,
     auto_update_branch="master",
+    stream_host="127.0.0.1",
+    stream_port=0,
+    stream_size=(640, 480),
+    stream_fps=30,
 )
 
 
