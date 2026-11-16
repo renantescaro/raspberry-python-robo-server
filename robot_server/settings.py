@@ -52,6 +52,14 @@ def _bool(key: str, default: bool) -> bool:
     return default if value is None else value.lower() in {"1", "true", "yes", "on", "sim"}
 
 
+def _size(key: str, default: tuple[int, int]) -> tuple[int, int]:
+    value = _raw(key)
+    if value is None:
+        return default
+    width, _, height = value.lower().partition("x")
+    return int(width), int(height)
+
+
 @dataclass(frozen=True)
 class CameraAxisSettings:
     pin: int
@@ -90,6 +98,11 @@ class Settings:
 
     auto_update: bool
     auto_update_branch: str
+
+    stream_host: str
+    stream_port: int
+    stream_size: tuple[int, int]
+    stream_fps: float
 
 
 def load_settings() -> Settings:
@@ -136,4 +149,8 @@ def load_settings() -> Settings:
         speed_of_sound_mps=_float("SPEED_OF_SOUND_MPS", 343.0),
         auto_update=_bool("AUTO_UPDATE", True),
         auto_update_branch=_str("AUTO_UPDATE_BRANCH", "master"),
+        stream_host=_str("STREAM_HOST", "0.0.0.0"),
+        stream_port=_int("STREAM_PORT", 8080),
+        stream_size=_size("STREAM_SIZE", (640, 480)),
+        stream_fps=_float("STREAM_FPS", 30),
     )
