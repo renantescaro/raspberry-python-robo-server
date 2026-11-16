@@ -47,7 +47,7 @@ def main() -> int:
             argv = [sys.executable, *sys.argv, "--no-update"]
             os.execv(sys.executable, argv)
 
-    backend = create_backend("mock" if args.simulate else settings.gpio_backend)
+    backend = create_backend("mock" if args.simulate else settings.gpio_backend, settings.gpio_chip)
     log.info("backend de GPIO: %s", backend.name)
 
     # systemd envia SIGTERM ao parar o serviço: trata como Ctrl+C para limpar o GPIO

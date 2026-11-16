@@ -44,6 +44,7 @@ def test_reads_env_file(tmp_path):
     s = load_settings()
     assert s.port == 6000
     assert s.ultrasonic_enabled
+    assert s.gpio_chip is None
     assert s.gpio_backend == "pigpio"
 
 
@@ -86,7 +87,13 @@ def test_create_backend_invalid_name():
 def test_create_backend_auto_without_gpio_libraries(monkeypatch):
     # None em sys.modules faz o import falhar com ImportError
     monkeypatch.setitem(sys.modules, "pigpio", None)
+    monkeypatch.setitem(sys.modules, "lgpio", None)
     monkeypatch.setitem(sys.modules, "RPi", None)
     monkeypatch.setitem(sys.modules, "RPi.GPIO", None)
     with pytest.raises(RuntimeError, match="--simulate"):
         create_backend("auto")
+
+
+def test_gpio_chip(monkeypatch):
+    monkeypatch.setenv("GPIO_CHIP", "4")
+    assert load_settings().gpio_chip == 4

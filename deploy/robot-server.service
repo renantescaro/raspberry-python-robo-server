@@ -1,0 +1,23 @@
+# Serviço systemd do servidor do robô.
+# Instalação: veja a seção "Serviço" do README.
+[Unit]
+Description=Servidor do robô (controle por joystick)
+# O git pull da inicialização precisa de rede
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=robot
+Group=robot
+WorkingDirectory=/home/robot/raspberry-python-robo-server
+ExecStart=/home/robot/raspberry-python-robo-server/venv/bin/python main.py
+Environment=PYTHONUNBUFFERED=1
+# main.py trata o SIGTERM como Ctrl+C: para os motores e libera o GPIO
+KillSignal=SIGTERM
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

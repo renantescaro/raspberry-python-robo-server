@@ -73,6 +73,9 @@ class RobotServer:
                 try:
                     connection, client = listener.accept()
                 except socket.timeout:
+                    # Sem cliente a câmera está parada: só processa a liberação dos servos
+                    # (sem isso o pulso ficava ativo até a primeira conexão e o servo tremia)
+                    self.camera.update(time.monotonic(), 0.0)
                     continue
                 # O socket aceito herdaria o timeout do listener; o loop define o seu
                 connection.settimeout(None)
