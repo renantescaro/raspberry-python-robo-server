@@ -1,0 +1,25 @@
+{
+  "description": "Vetores do contrato do protocolo cliente <-> servidor. Arquivo idêntico nos dois repositórios.",
+  "version": 1,
+  "packet_size": 4,
+  "magic": 165,
+  "flags": {"FORWARD": 1, "BACKWARD": 2, "LEFT": 4, "RIGHT": 8},
+  "roundtrip": [
+    {"name": "parado", "state": [0, 0, 0], "hex": "a5000000"},
+    {"name": "frente", "state": [1, 0, 0], "hex": "a5010000"},
+    {"name": "ré", "state": [2, 0, 0], "hex": "a5020000"},
+    {"name": "esquerda", "state": [4, 0, 0], "hex": "a5040000"},
+    {"name": "direita", "state": [8, 0, 0], "hex": "a5080000"},
+    {"name": "frente + esquerda, câmera para cima/direita", "state": [5, 1, 1], "hex": "a5050101"},
+    {"name": "câmera para baixo/esquerda", "state": [0, -1, -1], "hex": "a500ffff"},
+    {"name": "todas as flags", "state": [15, 1, -1], "hex": "a50f01ff"}
+  ],
+  "decode": [
+    {"name": "câmera com magnitude > 1 é normalizada", "hex": "a5010580", "state": [1, 1, -1]},
+    {"name": "bits altos das flags são ignorados", "hex": "a5f10000", "state": [1, 0, 0]}
+  ],
+  "invalid": [
+    {"name": "magic zero", "hex": "00010000"},
+    {"name": "magic 0xFF", "hex": "ff000000"}
+  ]
+}
