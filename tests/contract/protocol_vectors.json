@@ -1,6 +1,6 @@
 {
   "description": "Vetores do contrato do protocolo cliente <-> servidor. Arquivo idêntico nos dois repositórios.",
-  "version": 2,
+  "version": 3,
   "packet_size": 4,
   "magic": 165,
   "flags": {
@@ -126,6 +126,69 @@
       "name": "desligar o Raspberry Pi",
       "code": 1,
       "hex": "a6010000"
+    }
+  ],
+  "telemetry_magic": 167,
+  "telemetry_packets": [
+    {
+      "name": "sinal forte",
+      "telemetry": [
+        91,
+        -46
+      ],
+      "hex": "a75bd200"
+    },
+    {
+      "name": "sinal fraco",
+      "telemetry": [
+        10,
+        -88
+      ],
+      "hex": "a70aa800"
+    },
+    {
+      "name": "sem sinal",
+      "telemetry": [
+        0,
+        -100
+      ],
+      "hex": "a7009c00"
+    },
+    {
+      "name": "desconhecido",
+      "telemetry": [
+        null,
+        null
+      ],
+      "hex": "a7ff8000"
+    }
+  ],
+  "telemetry_decode": [
+    {
+      "name": "qualidade acima de 100% é limitada",
+      "hex": "a7c8d200",
+      "telemetry": [
+        100,
+        -46
+      ]
+    },
+    {
+      "name": "byte reservado é ignorado",
+      "hex": "a75bd2ff",
+      "telemetry": [
+        91,
+        -46
+      ]
+    }
+  ],
+  "telemetry_encode": [
+    {
+      "name": "valores fora da faixa são limitados",
+      "telemetry": [
+        150,
+        -200
+      ],
+      "hex": "a7648100"
     }
   ]
 }

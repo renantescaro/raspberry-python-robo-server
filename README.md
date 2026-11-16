@@ -73,6 +73,14 @@ O serviço `camera-stream` (`python -m robot_server.streaming`) publica a câmer
 * roda separado do controle: falha na câmera não afeta os motores
 * resolução e FPS em `STREAM_SIZE` / `STREAM_FPS` (padrão 640x480 @ 30)
 
+## Qualidade do Wi-Fi 📶
+
+Enquanto um cliente está conectado, o servidor envia a cada `TELEMETRY_INTERVAL_S` (padrão 2 s)
+a qualidade (%) e o sinal (dBm) do Wi-Fi do robô, lidos de `/proc/net/wireless` na interface
+`WIFI_INTERFACE` (padrão `wlan0`). O cliente mostra isso no painel da janela de controle.
+`TELEMETRY_INTERVAL_S=0` desativa. Fora do Linux (ex.: `--simulate` no Windows) o valor vai
+como desconhecido.
+
 ## Simulador (qualquer PC)
 
 ```bash

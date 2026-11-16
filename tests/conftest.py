@@ -83,6 +83,8 @@ DEFAULT_SETTINGS = Settings(
     stream_fps=30,
     shutdown_enabled=True,
     shutdown_command=("true",),
+    wifi_interface="wlan0",
+    telemetry_interval_s=2.0,
 )
 
 

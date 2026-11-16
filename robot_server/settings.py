@@ -108,6 +108,9 @@ class Settings:
     shutdown_enabled: bool
     shutdown_command: tuple[str, ...]
 
+    wifi_interface: str
+    telemetry_interval_s: float
+
 
 def load_settings() -> Settings:
     load_dotenv(ENV_FILE)
@@ -159,4 +162,6 @@ def load_settings() -> Settings:
         stream_fps=_float("STREAM_FPS", 30),
         shutdown_enabled=_bool("SHUTDOWN_ENABLED", True),
         shutdown_command=tuple(shlex.split(_str("SHUTDOWN_COMMAND", "sudo -n /usr/bin/systemctl poweroff"))),
+        wifi_interface=_str("WIFI_INTERFACE", "wlan0"),
+        telemetry_interval_s=_float("TELEMETRY_INTERVAL_S", 2.0),
     )
