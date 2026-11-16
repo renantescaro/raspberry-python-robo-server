@@ -71,8 +71,10 @@ class Picamera2Source:
         from picamera2 import Picamera2  # import tardio: só existe no Raspberry Pi
 
         self._camera = Picamera2()
+        # YUV420 vai direto ao codificador de hardware (1,5 byte/pixel em vez de 4 do
+        # XBGR8888 padrão): menos cópia de memória e menos CPU
         config = self._camera.create_video_configuration(
-            main={"size": size}, controls={"FrameRate": fps}
+            main={"size": size, "format": "YUV420"}, controls={"FrameRate": fps}
         )
         self._camera.configure(config)
 
