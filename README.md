@@ -19,9 +19,9 @@ Servidor que roda no Raspberry Pi 3 B+ e controla o robô:
 ## Instalação no Raspberry Pi
 
 ```bash
-sudo apt-get install pigpio python3-pigpio python3-rpi.gpio
-sudo systemctl enable --now pigpiod   # PWM por hardware, sem tremor nos servos
+sudo apt-get install python3-lgpio python3-dotenv   # já vêm no Raspberry Pi OS Bookworm/Trixie
 
+# --system-site-packages: o lgpio/RPi.GPIO do sistema ficam visíveis no venv
 python3 -m venv --system-site-packages venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -29,7 +29,22 @@ cp .env.example .env                  # ajuste os pinos (numeração BCM)
 python main.py
 ```
 
-Sem o `pigpiod` rodando o servidor usa RPi.GPIO automaticamente (PWM por software).
+Com `GPIO_BACKEND=auto` o servidor escolhe, nesta ordem:
+
+1. **pigpio** – só se o daemon `pigpiod` estiver rodando (servos por DMA). O pacote não existe mais no Trixie.
+2. **lgpio** – padrão no Bookworm/Trixie.
+3. **RPi.GPIO** – fallback com PWM por software.
+
+## Serviço (iniciar no boot)
+
+```bash
+sudo cp deploy/robot-server.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now robot-server
+journalctl -u robot-server -f        # logs
+```
+
+O arquivo assume o usuário `robot` e o projeto em `/home/robot/raspberry-python-robo-server`; ajuste se for diferente.
 
 ## Simulador (qualquer PC)
 

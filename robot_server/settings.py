@@ -66,6 +66,7 @@ class Settings:
     host: str
     port: int
     gpio_backend: str
+    gpio_chip: int | None
 
     motor_right_forward_pin: int
     motor_right_backward_pin: int
@@ -103,6 +104,8 @@ def load_settings() -> Settings:
         host=_str("SERVER_HOST", "0.0.0.0"),
         port=_int("SERVER_PORT", 5001),
         gpio_backend=_str("GPIO_BACKEND", "auto").lower(),
+        # None = detecta o chip do processador automaticamente (só lgpio)
+        gpio_chip=None if _raw("GPIO_CHIP") is None else _int("GPIO_CHIP", 0),
         motor_right_forward_pin=_int("MOTOR_RIGHT_FORWARD_PIN", 27),
         motor_right_backward_pin=_int("MOTOR_RIGHT_BACKWARD_PIN", 17),
         motor_left_forward_pin=_int("MOTOR_LEFT_FORWARD_PIN", 4),

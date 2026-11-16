@@ -58,6 +58,7 @@ DEFAULT_SETTINGS = Settings(
     host="127.0.0.1",
     port=0,
     gpio_backend="mock",
+    gpio_chip=None,
     motor_right_forward_pin=27,
     motor_right_backward_pin=17,
     motor_left_forward_pin=4,

@@ -1,4 +1,4 @@
 python-dotenv>=1.0
-# Bibliotecas de GPIO: instaladas apenas no Raspberry Pi (ARM)
+# Bibliotecas de GPIO: lgpio e RPi.GPIO vêm do sistema (apt) e entram no venv via
+# --system-site-packages; o pip compilaria versões sem suporte aos kernels novos.
 pigpio>=1.78; platform_machine == "armv7l" or platform_machine == "aarch64"
-RPi.GPIO>=0.7.1; platform_machine == "armv7l" or platform_machine == "aarch64"
