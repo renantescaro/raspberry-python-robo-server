@@ -1,1 +1,4 @@
-python-dotenv
+python-dotenv>=1.0
+# Bibliotecas de GPIO: instaladas apenas no Raspberry Pi (ARM)
+pigpio>=1.78; platform_machine == "armv7l" or platform_machine == "aarch64"
+RPi.GPIO>=0.7.1; platform_machine == "armv7l" or platform_machine == "aarch64"

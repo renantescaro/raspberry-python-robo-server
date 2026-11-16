@@ -1,0 +1,78 @@
+name: Testes
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Unitários e integração (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 = Raspberry Pi OS Bookworm, 3.13 = Raspberry Pi OS Trixie
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Executar testes
+        run: pytest
+
+  contract:
+    name: Contrato com o cliente
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Usa a branch de mesmo nome no cliente, se existir; senão a master
+      - name: Escolher branch do cliente
+        id: peer
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git ls-remote --exit-code --heads https://github.com/renantescaro/raspberry-python-robo-client.git "$BRANCH" > /dev/null; then
+            echo "ref=$BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=master" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Contrato verificado contra o cliente em: $(tail -n1 "$GITHUB_OUTPUT")"
+
+      - uses: actions/checkout@v5
+        with:
+          repository: renantescaro/raspberry-python-robo-client
+          ref: ${{ steps.peer.outputs.ref }}
+          path: .peer
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Executar testes de contrato
+        run: pytest tests/test_contract.py -v
+        env:
+          PEER_REPO_DIR: .peer
+          REQUIRE_PEER: "1"
