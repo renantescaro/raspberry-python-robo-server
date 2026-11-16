@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -104,6 +105,9 @@ class Settings:
     stream_size: tuple[int, int]
     stream_fps: float
 
+    shutdown_enabled: bool
+    shutdown_command: tuple[str, ...]
+
 
 def load_settings() -> Settings:
     load_dotenv(ENV_FILE)
@@ -153,4 +157,6 @@ def load_settings() -> Settings:
         stream_port=_int("STREAM_PORT", 8080),
         stream_size=_size("STREAM_SIZE", (640, 480)),
         stream_fps=_float("STREAM_FPS", 30),
+        shutdown_enabled=_bool("SHUTDOWN_ENABLED", True),
+        shutdown_command=tuple(shlex.split(_str("SHUTDOWN_COMMAND", "sudo -n /usr/bin/systemctl poweroff"))),
     )

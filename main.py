@@ -9,6 +9,7 @@ import signal
 import sys
 
 from robot_server.gpio_backend import create_backend
+from robot_server.power import PowerControl
 from robot_server.server import RobotServer
 from robot_server.settings import PROJECT_DIR, load_settings
 from robot_server.updater import self_update
@@ -53,7 +54,11 @@ def main() -> int:
     # systemd envia SIGTERM ao parar o serviço: trata como Ctrl+C para limpar o GPIO
     signal.signal(signal.SIGTERM, _raise_keyboard_interrupt)
 
-    server = RobotServer(settings, backend)
+    # No simulador o desligamento só é registrado no log (nunca desliga o PC)
+    power = PowerControl(
+        None if args.simulate else settings.shutdown_command, settings.shutdown_enabled
+    )
+    server = RobotServer(settings, backend, power)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -11,6 +11,7 @@ from . import protocol
 from .camera import Camera
 from .gpio_backend import GpioBackend
 from .motors import Drive
+from .power import PowerControl
 from .settings import Settings
 from .ultrasonic import UltrasonicSensor
 
@@ -21,8 +22,12 @@ ACCEPT_TIMEOUT_S = 0.2
 
 
 class RobotServer:
-    def __init__(self, settings: Settings, backend: GpioBackend) -> None:
+    def __init__(
+        self, settings: Settings, backend: GpioBackend, power: PowerControl | None = None
+    ) -> None:
         self._settings = settings
+        # Sem PowerControl (testes, uso como biblioteca) o comando de desligar é ignorado
+        self._power = power
         self._listener: socket.socket | None = None
         self._shutdown = threading.Event()
         self.drive = Drive(
@@ -82,7 +87,7 @@ class RobotServer:
                 log.info("cliente conectado: %s:%d", *client)
                 try:
                     with connection:
-                        self._handle_client(connection)
+                        self._handle_client(connection, f"{client[0]}:{client[1]}")
                 except (OSError, protocol.ProtocolError) as exc:
                     log.warning("conexão encerrada com erro: %s", exc)
                 finally:
@@ -100,7 +105,7 @@ class RobotServer:
         if self.ultrasonic is not None:
             self.ultrasonic.stop()
 
-    def _handle_client(self, connection: socket.socket) -> None:
+    def _handle_client(self, connection: socket.socket, client: str = "?") -> None:
         connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         tick = self._settings.control_tick_s
         watchdog = self._settings.watchdog_timeout_s
@@ -130,10 +135,16 @@ class RobotServer:
             now = time.monotonic()
             complete = len(buffer) // protocol.PACKET_SIZE
             if complete:
-                # Só o pacote mais recente importa; os anteriores já estão obsoletos
-                state = protocol.decode(buffer, (complete - 1) * protocol.PACKET_SIZE)
+                # Comandos são sempre executados; de estados, só o mais recente importa
+                state: protocol.ControlState | None = None
+                for index in range(complete):
+                    packet = protocol.decode_packet(buffer, index * protocol.PACKET_SIZE)
+                    if isinstance(packet, protocol.ControlState):
+                        state = packet
+                    elif self._run_command(packet, client):
+                        return  # desligamento iniciado: encerra a conexão
                 del buffer[: complete * protocol.PACKET_SIZE]
-                if state != last_state or watchdog_tripped:
+                if state is not None and (state != last_state or watchdog_tripped):
                     log.debug("estado recebido: %s", state)
                     self.drive.apply(state.flags)
                     self.camera.set_direction(state.camera_v, state.camera_h, now)
@@ -148,3 +159,15 @@ class RobotServer:
 
             self.camera.update(now, now - last_update)
             last_update = now
+
+    def _run_command(self, command: protocol.Command, client: str) -> bool:
+        """Executa um comando. Retorna True se a conexão deve ser encerrada."""
+        if command.code == protocol.SHUTDOWN:
+            log.warning("desligamento solicitado por %s", client)
+            # Para tudo antes de desligar: o robô não pode ficar andando
+            self.halt()
+            if self._power is None:
+                log.warning("desligamento ignorado: controle de energia não configurado")
+                return False
+            return self._power.shutdown()
+        return False

@@ -81,6 +81,8 @@ DEFAULT_SETTINGS = Settings(
     stream_port=0,
     stream_size=(640, 480),
     stream_fps=30,
+    shutdown_enabled=True,
+    shutdown_command=("true",),
 )
 
 

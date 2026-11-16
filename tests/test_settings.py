@@ -9,7 +9,7 @@ from robot_server.settings import load_settings
 
 _PREFIXES = (
     "SERVER_", "GPIO_", "MOTOR_", "SERVO_", "CAMERA_", "CONTROL_", "WATCHDOG_",
-    "ULTRASONIC_", "SPEED_OF_SOUND", "AUTO_UPDATE", "PORTA_", "STREAM_",
+    "ULTRASONIC_", "SPEED_OF_SOUND", "AUTO_UPDATE", "PORTA_", "STREAM_", "SHUTDOWN_",
 )
 
 
@@ -110,3 +110,17 @@ def test_stream_custom(monkeypatch):
     monkeypatch.setenv("STREAM_FPS", "15")
     s = load_settings()
     assert (s.stream_port, s.stream_size, s.stream_fps) == (8081, (1280, 720), 15)
+
+
+def test_shutdown_defaults():
+    s = load_settings()
+    assert s.shutdown_enabled
+    assert s.shutdown_command == ("sudo", "-n", "/usr/bin/systemctl", "poweroff")
+
+
+def test_shutdown_custom(monkeypatch):
+    monkeypatch.setenv("SHUTDOWN_ENABLED", "false")
+    monkeypatch.setenv("SHUTDOWN_COMMAND", "sudo -n /sbin/shutdown -h now")
+    s = load_settings()
+    assert not s.shutdown_enabled
+    assert s.shutdown_command == ("sudo", "-n", "/sbin/shutdown", "-h", "now")
