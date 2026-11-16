@@ -45,6 +45,22 @@ def send(sock, flags=0, camera_v=0, camera_h=0):
     sock.sendall(protocol.encode(protocol.ControlState(flags, camera_v, camera_h)))
 
 
+def test_releases_servos_without_any_client(backend, make_settings, wait):
+    robot = RobotServer(make_settings(servo_release_after_s=0.1), backend)
+    robot.bind()
+    # Posição inicial é escrita ao criar o servidor
+    assert backend.servos[18] > 0 and backend.servos[23] > 0
+    thread = threading.Thread(target=robot.serve_forever, daemon=True)
+    thread.start()
+    try:
+        # Nenhum cliente conecta: o pulso precisa ser cortado mesmo assim
+        assert wait(lambda: backend.servos == {18: 0, 23: 0}, timeout=2)
+    finally:
+        robot.shutdown()
+        thread.join(timeout=3)
+        robot.close()
+
+
 def test_applies_received_state(server, wait):
     with connect(server) as sock:
         send(sock, protocol.FORWARD)
